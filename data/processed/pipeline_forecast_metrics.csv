@@ -1,0 +1,13 @@
+metric,unique_id,ETS
+mae,ec2_cpu_utilization_24ae8d,0.058199257874734206
+mae,ec2_cpu_utilization_53ea38,0.04817472700166274
+mae,ec2_cpu_utilization_5f5533,0.7830778679185014
+rmse,ec2_cpu_utilization_24ae8d,0.10929361562009014
+rmse,ec2_cpu_utilization_53ea38,0.07158173874028358
+rmse,ec2_cpu_utilization_5f5533,0.9988322614692088
+smape,ec2_cpu_utilization_24ae8d,0.2540392722728662
+smape,ec2_cpu_utilization_53ea38,0.01309522880845414
+smape,ec2_cpu_utilization_5f5533,0.010228539542155642
+mase,ec2_cpu_utilization_24ae8d,1.6072131400943706
+mase,ec2_cpu_utilization_53ea38,0.7829917195458745
+mase,ec2_cpu_utilization_5f5533,0.22287407323143985

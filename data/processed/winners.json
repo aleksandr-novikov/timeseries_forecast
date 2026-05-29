@@ -1,0 +1,6 @@
+{
+  "stat": "SNaive",
+  "ml": "XGB",
+  "dl": "NHITS",
+  "h": 288
+}

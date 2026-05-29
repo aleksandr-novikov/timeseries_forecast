@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+*.log
+data/raw/NAB/
+course/
+utilits4tsc/
+lightning_logs/
+ray_results/

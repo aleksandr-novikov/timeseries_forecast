@@ -1,0 +1,23 @@
+{
+  "forecast_model": "AutoETS",
+  "anomaly_method": "zscore_resid",
+  "horizon": 288,
+  "fit_time_s": 7.673,
+  "forecast_time_s": 0.001,
+  "detect_time_s": 0.002,
+  "forecast_metrics_avg": {
+    "mae": 0.29648395093163277,
+    "mase": 0.8710263109572284,
+    "rmse": 0.39323587194319415,
+    "smape": 0.092454346874492
+  },
+  "anomaly_scores": {
+    "precision": 0.25,
+    "recall": 0.11046511627906977,
+    "f1": 0.1532258064516129,
+    "auc": 0.5369113165195514,
+    "n_predicted": 532,
+    "n_actual": 1204
+  },
+  "panel_rows": 12093
+}

@@ -1,0 +1,12 @@
+{
+  "freq": "5min",
+  "daily_season": 288,
+  "weekly_season": 2016,
+  "fh": 1693,
+  "fh_frac": 0.42,
+  "series": [
+    "ec2_cpu_utilization_24ae8d",
+    "ec2_cpu_utilization_53ea38",
+    "ec2_cpu_utilization_5f5533"
+  ]
+}
