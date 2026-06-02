@@ -47,11 +47,20 @@ pip install -r requirements.txt
 python -m src.pipeline --forecast-model MSTL --anomaly-method zscore_resid
 ```
 
-Ноутбуки открываются в Colab после `!git clone … && pip install -r requirements.txt`.
+**Открыть в Colab:**
+[01 EDA](https://colab.research.google.com/github/aleksandr-novikov/timeseries_forecast/blob/main/notebooks/01_EDA_VIS.ipynb) ·
+[02 StatForecast](https://colab.research.google.com/github/aleksandr-novikov/timeseries_forecast/blob/main/notebooks/02_StatForecast.ipynb) ·
+[03 Diagnostics](https://colab.research.google.com/github/aleksandr-novikov/timeseries_forecast/blob/main/notebooks/03_Diagnostics.ipynb) ·
+[04 ML/DL](https://colab.research.google.com/github/aleksandr-novikov/timeseries_forecast/blob/main/notebooks/04_ML_DL.ipynb) ·
+[05 Anomaly + Pipeline](https://colab.research.google.com/github/aleksandr-novikov/timeseries_forecast/blob/main/notebooks/05_Anomaly_Pipeline.ipynb)
+
+Первой ячейкой в Colab выполнить `!git clone … && %cd … && !pip install -r requirements.txt`.
 
 ## 4. EDA
 
 Графики - в `notebooks/01_EDA_VIS.ipynb` и `report/figures/01_*.png`.
+
+![Три ряда CPU; оранжевым отмечены размеченные окна аномалий NAB](report/figures/01_overview.png)
 
 1. Регулярная сетка, шаг 5 минут, пропусков нет.
 2. **Суточная сезонность** во всех трех рядах, амплитуда ~30% CPU. Суточный профиль разный: у одного ряда пик ночью, у остальных днем.
@@ -89,11 +98,17 @@ python -m src.pipeline --forecast-model MSTL --anomaly-method zscore_resid
 Абсолютные F1 низкие, но для unsupervised на NAB это норма: окна разметки широкие, точно попасть трудно. У MatrixProfile/LOF/IsolationForest AUC выше 0.55 - все же лучше случайного.
 Файл: `data/processed/anomaly_methods_comparison.csv`.
 
-**Дополнительно:** KS-test на остатках MSTL обнаруживает точки concept drift (см. `report/figures/05_drift.png`).
+![Matrix Profile: красные крестики - предсказанные аномалии, красные окна - разметка NAB](report/figures/05_anomalies_MatrixProfile.png)
+
+**Дополнительно:** KS-test на остатках MSTL обнаруживает точки concept drift.
+
+![Точки concept drift (KS-test на остатках MSTL)](report/figures/05_drift.png)
 
 ## 6. Сводная таблица методов (фактические результаты)
 
 Горизонт прогноза `h = 288` шагов (1 сутки), оценка на последних 288 точках каждого ряда.
+
+![Средний MAE по моделям (3 ряда); пунктир - baseline SeasonalNaive](report/figures/06_mae_comparison.png)
 
 ### Stats (mean MAE по 3 рядам, single hold-out)
 
@@ -133,6 +148,8 @@ python -m src.pipeline --forecast-model MSTL --anomaly-method zscore_resid
 ```
 
 NHITS дал лучший MAE среди всех групп (0.249 против 0.281 у SNaive), но отрыв от бейзлайна небольшой - на 14-дневной истории это ожидаемо.
+
+![Прогноз победителей групп против факта на тестовых сутках; оранжевое окно - test](report/figures/06_forecast_vs_actual.png)
 
 ### Зафиксированный набор протестированных моделей
 
@@ -196,12 +213,30 @@ python -m src.pipeline --forecast-model {SeasonalNaive,MSTL,AutoETS,TBATS} \
 ```
 (`forecast_metrics_avg` - среднее метрики по трем рядам.)
 
-**Тестирование пайплайна:**
-1. **Сравнение конфигураций** (model × detector) по точности и времени - `notebooks/05_Anomaly_Pipeline.ipynb`.
-2. **Performance-бенчмарк** (полный прогон пайплайна, h=288): SeasonalNaive ≈2.5s, AutoETS ≈7.3s, MSTL ≈9.6s.
-3. **Стресс-тест**: добавление искусственной волатильности → бейзлайны более устойчивы.
-4. **Drift detection**: KS-test на residuals - обнаруживает структурные изменения (см. `report/figures/05_drift.png`).
-5. **Воспроизводимость**: фиксированные `random_state=42` во всех ML-моделях.
+**Тестирование пайплайна.** Прогнал 5 конфигураций (прогнозная модель × детектор), полный panel, горизонт 288:
+
+| forecast | detector | MAE | Precision | Recall | F1 | fit, s | detect, s |
+|---|---|---|---|---|---|---|---|
+| **SeasonalNaive** | **matrix_profile** | **0.281** | **0.194** | **0.251** | **0.219** | 2.6 | ~10* |
+| SeasonalNaive | zscore_resid | 0.281 | 0.068 | 0.119 | 0.087 | 2.6 | 0.0 |
+| MSTL | isolation_forest | 0.858 | 0.234 | 0.118 | 0.157 | 9.6 | 0.7 |
+| MSTL | matrix_profile | 0.858 | 0.194 | 0.251 | 0.219 | 9.5 | 0.1 |
+| MSTL | zscore_resid | 0.858 | 0.108 | 0.086 | 0.095 | 9.7 | 0.0 |
+
+Лучшая связка - `SeasonalNaive` + `MatrixProfile`: у SeasonalNaive меньший MAE (0.281 против 0.858 у MSTL на этих рядах), а MatrixProfile дает лучший F1 среди детекторов и обучается быстрее (~2.6s против ~9.6s).
+\*detect-time у matrix_profile включает numba-JIT при первом вызове (~10s), далее ~0.1s.
+
+Дополнительно:
+- **Стресс-тест**: при добавлении искусственной волатильности бейзлайны деградируют слабее гладких моделей.
+- **Drift**: KS-test на остатках MSTL отмечает структурные сдвиги (график в §5).
+- **Воспроизводимость**: `random_state=42` во всех ML-моделях.
+
+## 8. Выводы
+
+- **Прогноз.** Лучший MAE у NHITS (0.249), затем XGB (0.264); обе модели обходят бейзлайн `SeasonalNaive` (0.281), но разрыв небольшой. На 14-дневной истории это ожидаемо: сложным моделям не хватает данных, и сезонный бейзлайн остается сильным.
+- **Что не сработало.** `AutoETS(ZZA)` (MAE 2.07) и `MSTL(daily+weekly)` (0.86) заметно хуже остальных - недельная сезонность на двух неполных циклах скорее мешает.
+- **Аномалии.** Лучший детектор - Matrix Profile (F1 0.219, AUC 0.57). Абсолютные значения низкие, но это типично для unsupervised на широких окнах NAB. Детекция через прогнозные интервалы работает слабо (F1 0.03-0.05).
+- **Прод.** `SeasonalNaive` обучается ~2.5s и устойчив к шуму - разумный дефолт для батч-прода; NHITS дает небольшой прирост точности ценой обучения. Итоговый выбор пайплайна: прогноз `SeasonalNaive`/`NHITS` + детектор `MatrixProfile`.
 
 ## Ссылки
 
